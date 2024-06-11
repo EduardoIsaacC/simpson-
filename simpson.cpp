@@ -1,68 +1,116 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "muParser.h"
+#include<iostream>
+#include<cmath>
+#include<string>
+#include<functional>
+#include<sstream>
+#include<limits>
 
-// Función de envoltura para evaluar expresiones matemáticas usando muParser
-double evaluateFunction(mu::Parser* parser, double x) {
-    parser->DefineVar("x", &x);
+using namespace std;
+
+// Función que evalúa la expresión ingresada por el usuario
+float evalExpr(string expr, float x) {
+    istringstream iss(expr);
+    string token;
+    float result = 0.0;
+    while (iss >> token) {
+        if (token == "x") {
+            result = x;
+        } else if (token == "sin") {
+            iss >> token;
+            result = sin(stof(token));
+        } else if (token == "cos") {
+            iss >> token;
+            result = cos(stof(token));
+        } else if (token == "exp") {
+            iss >> token;
+            result = exp(stof(token));
+        } else if (token == "e") {
+            result = exp(1.0);
+        } else if (token == "log") {
+            iss >> token;
+            result = log(stof(token));
+        } else if (token == "sqrt") {
+            iss >> token;
+            result = sqrt(stof(token));
+        } else {
+            result = stof(token);
+        }
+    }
+    return result;
+}
+
+float simpson(float a, float b, int n, function<float(float)> func) {
     try {
-        return parser->Eval();
-    } catch (mu::ParserError &e) {
-        printf("Error: %s\n", e.GetMsg().c_str());
-        exit(EXIT_FAILURE);
+        float h, x[n+1], sum = 0;
+        int j;
+        h = (b-a)/n;
+        
+        x[0] = a;
+        
+        cout << "Pasos del método de Simpson 1/3:" << endl;
+        cout << "1. Se divide el intervalo [" << a << ", " << b << "] en " << n << " subintervalos." << endl;
+        cout << "2. Se calcula la anchura de cada subintervalo: h = (" << b << " - " << a << ") / " << n << " = " << h << endl;
+        
+        for(j=1; j<=n; j++)
+        {
+            x[j] = a + h*j;
+            cout << "3. Se calcula el valor de x en cada subintervalo: x[" << j << "] = " << a << " + " << h << " * " << j << " = " << x[j] << endl;
+        }
+        
+        cout << "4. Se aplica la fórmula de Simpson 1/3:" << endl;
+        sum = func(x[0]) + func(x[n]);
+        for(j=1; j<n; j++)
+        {
+            if (j % 2 == 0)
+                sum += 2*func(x[j]);
+            else
+                sum += 4*func(x[j]);
+            cout << "   sum += " << (j % 2 == 0? "2*" : "4*") << "f(x[" << j << "])" << endl;
+        }
+        
+        cout << "5. Se devuelve el resultado final: sum * h / 3 = " << sum << " * " << h << " / 3 = " << sum*h/3 << endl;
+        
+        return sum*h/3;
+    } catch (std::exception& e) {
+        cerr << "Error: " << e.what() << endl;
+        return 0.0;
     }
 }
 
-// Método de Simpson 1/3 para calcular el área bajo la curva
-double simpson(mu::Parser* parser, double a, double b, int n) {
-    if (n % 2 != 0) {
-        printf("El numero de intervalos n debe ser par.\n");
-        return -1;
-    }
-
-    double h = (b - a) / n;
-    double s1 = 0.0;
-    double s2 = 0.0;
-
-    for (int i = 1; i < n; i += 2) {
-        s1 += evaluateFunction(parser, a + i * h);
-    }
-
-    for (int i = 2; i < n; i += 2) {
-        s2 += evaluateFunction(parser, a + i * h);
-    }
-
-    double integral = (h / 3) * (evaluateFunction(parser, a) + evaluateFunction(parser, b) + 4 * s1 + 2 * s2);
-    return integral;
-}
-
-int main() {
-    double a, b;
+int main()
+{
+    float a,b;
     int n;
-    char func[256];
-
-    printf("Ingrese la funcion f(x): ");
-    scanf("%255s", func);
-    printf("Ingrese el limite inferior de la integral: ");
-    scanf("%lf", &a);
-    printf("Ingrese el limite superior de la integral: ");
-    scanf("%lf", &b);
-    printf("Ingrese el numero de intervalos (debe ser par): ");
-    scanf("%d", &n);
-
-    mu::Parser parser;
-    try {
-        parser.SetExpr(func);
-    } catch (mu::ParserError &e) {
-        printf("Error: %s\n", e.GetMsg().c_str());
-        return -1;
+    string funcStr;
+    cout << "Ingrese la función (por ejemplo, x*sin(x) o x*cos(x)): ";
+    getline(cin, funcStr);
+    cout << "Ingrese el límite inferior a: ";
+    while (!(cin >> a)) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Invalid input. Please enter a number: ";
     }
-
-    double area = simpson(&parser, a, b, n);
-    if (area != -1) {
-        printf("El area aproximada es: %10.5f\n", area);
+    cout << "Ingrese el límite superior b: ";
+    while (!(cin >> b)) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Invalid input. Please enter a number: ";
     }
-
+    cout << "Ingrese el número de intervalos n: ";
+    while (!(cin >> n)) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Invalid input. Please enter a number: ";
+    }
+    
+    auto func = [&funcStr](float x) {
+        return evalExpr(funcStr, x);
+    };
+    
+    if (n%2 == 0)
+        cout << "El resultado de la integral es: " << simpson(a,b,n,func) << endl;
+    else
+        cout << "n debe ser un número par." << endl;
+    
     return 0;
 }
