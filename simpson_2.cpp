@@ -1,15 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <muParser.h>
+#include "muParser.h"
 
 // Función de envoltura para evaluar expresiones matemáticas usando muParser
 double evaluateFunction(mu::Parser* parser, double x) {
     parser->DefineVar("x", &x);
     try {
         return parser->Eval();
-    } catch (mu::Parser::exception_type &e) {
-        printf("Error: %s\n", e.GetMsg());
+    } catch (mu::ParserError &e) {
+        printf("Error: %s\n", e.GetMsg().c_str());
         exit(EXIT_FAILURE);
     }
 }
@@ -52,7 +52,12 @@ int main() {
     scanf("%d", &n);
 
     mu::Parser parser;
-    parser.SetExpr(func);
+    try {
+        parser.SetExpr(func);
+    } catch (mu::ParserError &e) {
+        printf("Error: %s\n", e.GetMsg().c_str());
+        return -1;
+    }
 
     double area = simpson(&parser, a, b, n);
     if (area != -1) {
