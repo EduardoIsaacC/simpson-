@@ -1,3 +1,6 @@
 [submodule "muparser"]
 	path = muparser
 	url = https://github.com/beltoforion/muparser.git
+[submodule "external/muparser"]
+	path = external/muparser
+	url = https://github.com/beltoforion/muparser.git

@@ -1,4 +1,4 @@
-include <muparser/muparser.h>
+#include <muparser/muParser.h>
 
 float simpson(float a, float b, int n, const std::string& expr) {
     MuParser parser;
