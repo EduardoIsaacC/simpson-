@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <sstream>
 #include "muParser.h"
 
 float simpson(float a, float b, int n, const std::string& expr) {
@@ -7,8 +8,34 @@ float simpson(float a, float b, int n, const std::string& expr) {
     double var = 0.0;
     parser.DefineVar("x", &var);
     
+    // Reemplazar "x^n" con "pow(x,n)" en la expresión
+    std::string expression = expr;
+    size_t pos = 0;
+    while ((pos = expression.find("^", pos)) != std::string::npos) {
+        if (pos > 0 && std::isdigit(expression[pos - 1])) {
+            // Encontrar la parte izquierda del ^
+            size_t left_pos = expression.find_last_of("0123456789", pos - 1);
+            if (left_pos != std::string::npos) {
+                // Encontrar la parte derecha del ^
+                size_t right_pos = expression.find_first_of("0123456789", pos + 1);
+                if (right_pos != std::string::npos) {
+                    // Extraer el exponente
+                    std::string exponent = expression.substr(pos + 1, right_pos - pos);
+                    // Construir la nueva expresión
+                    std::stringstream ss;
+                    ss << expression.substr(left_pos, pos - left_pos) << "pow(x," << exponent << ")";
+                    expression.replace(left_pos, right_pos - left_pos, ss.str());
+                    // Mover pos al final del reemplazo
+                    pos += exponent.length() + 7; // "pow(x," tiene 7 caracteres
+                    continue;
+                }
+            }
+        }
+        ++pos;
+    }
+
     try {
-        parser.SetExpr(expr);
+        parser.SetExpr(expression);
     } catch (mu::ParserError &e) {
         std::cout << "Error en la configuración de la expresión: " << e.GetMsg() << std::endl;
         return 0.0;
@@ -58,7 +85,7 @@ int main() {
     int n;
     std::string expr;
 
-    std::cout << "Ingrese la función (por ejemplo, sin(x) o cos(x) o exp(x)): ";
+    std::cout << "Ingrese la función (por ejemplo, sin(x), cos(x), exp(x) o x^2, x^3): ";
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Limpiar cualquier entrada pendiente
     std::getline(std::cin, expr);
 
