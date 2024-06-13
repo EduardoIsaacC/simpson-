@@ -14,21 +14,23 @@ float simpson(float a, float b, int n, const std::string& expr) {
     while ((pos = expression.find("^", pos)) != std::string::npos) {
         if (pos > 0 && std::isdigit(expression[pos - 1])) {
             // Encontrar la parte izquierda del ^
-            size_t left_pos = expression.find_last_of("0123456789", pos - 1);
+            size_t left_pos = expression.find_last_of("0123456789x", pos - 1);
             if (left_pos != std::string::npos) {
                 // Encontrar la parte derecha del ^
-                size_t right_pos = expression.find_first_of("0123456789", pos + 1);
-                if (right_pos != std::string::npos) {
-                    // Extraer el exponente
-                    std::string exponent = expression.substr(pos + 1, right_pos - pos);
-                    // Construir la nueva expresión
-                    std::stringstream ss;
-                    ss << expression.substr(left_pos, pos - left_pos) << "pow(x," << exponent << ")";
-                    expression.replace(left_pos, right_pos - left_pos, ss.str());
-                    // Mover pos al final del reemplazo
-                    pos += exponent.length() + 7; // "pow(x," tiene 7 caracteres
-                    continue;
+                size_t right_pos = expression.find_first_not_of("0123456789./", pos + 1);
+                if (right_pos == std::string::npos) {
+                    right_pos = expression.length();
                 }
+                // Extraer la base y el exponente
+                std::string base = expression.substr(left_pos, pos - left_pos);
+                std::string exponent = expression.substr(pos + 1, right_pos - pos - 1);
+                // Construir la nueva expresión
+                std::stringstream ss;
+                ss << "pow(" << base << "," << exponent << ")";
+                expression.replace(left_pos, right_pos - left_pos, ss.str());
+                // Mover pos al final del reemplazo
+                pos = left_pos + ss.str().length();
+                continue;
             }
         }
         ++pos;
@@ -85,7 +87,7 @@ int main() {
     int n;
     std::string expr;
 
-    std::cout << "Ingrese la función (por ejemplo, sin(x), cos(x), exp(x) o x^2, x^3): ";
+    std::cout << "Ingrese la función (por ejemplo, sin(x), cos(x), exp(x) o x^2, x^3, x^(1/2)): ";
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Limpiar cualquier entrada pendiente
     std::getline(std::cin, expr);
 
